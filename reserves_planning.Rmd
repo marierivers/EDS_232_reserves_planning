@@ -9,6 +9,10 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+library(here)
+```
+
 # Data Setup
 ```{r}
 dir_data <- here("data/prioritizr")

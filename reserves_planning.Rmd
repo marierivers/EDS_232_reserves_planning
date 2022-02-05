@@ -5,6 +5,8 @@ date: "1/26/2022"
 output: html_document
 ---
 
+This lab uses the `prioritize` R package for systematic conservation planning which explores some of the common tasks involved with developing prioritizations.
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -48,6 +50,7 @@ if(!file.exists(pu_shp)){
 
 # Data
 ## Data Import
+The data contains vector-based planning unit data (pu.sh) and raster-based data describing the spatial distribution of 32 vegetation classes (vegetation.tif) in southern Tasmania, Australia.
 ```{r}
 # import planning unit data
 pu_data <- as(read_sf(pu_shp), "Spatial")
@@ -114,7 +117,8 @@ head(pu_data$cost)
 
 ```{r}
 # print the highest cost value
-max(pu_data$cost)
+max_pu_cost <- max(pu_data$cost)
+max_pu_cost
 ```
 
 ```{r}
@@ -138,18 +142,20 @@ mapview(pu_data, zcol = "cost")
 ```
 
 **How many planning units are in the planning unit data?**
-
-xxx
+```{r}
+num_pu <- nrow(pu_data@data)
+```
+The planning unit data contains `r num_pu` planning units.
 
 **What is the highest cost value?**
-
-xxx
+The highest cost planning units has a values of $`r max_pu_cost` million Austrailian dollars.
 
 **Is there a spatial pattern in the planning unit cost values (hint: use `plot` to make a map)?**
 
-xxx
+Yes. The lower cost planning units are located in the north east section of the study area. The most expensive planning units are located in the north central and north west sections of the study area.
 
 ## Vegetation data
+The vegetation data is in raster formate and describes the spatial distribution of 32 vegetation classes in the study area. The raster data contains multiple layers (also called "bands") and each layer corresponds to a spatial grid with exactly the same area adn has exactly the same dimensionality (ie number of rows, columns and cells). In this dataset there are 32 different regular spatial grids layered on top of each other with each layer corresponding to a different vegetation class. Each layer contains a grin with 164 rows, 326 columns, and 53464 cells. Within each layer, each cell corresponds to a 0.967 by 1.02 km square. The values associated with each grid cell indicate the (1) presence or (0) absence of a given vegetation class in the cell.
 ```{r}
 # print a short summary of the data
 print(veg_data)
@@ -167,7 +173,7 @@ mapview(veg_data[[20]])
 
 ```{r}
 # print number of rows in the data
-nrow(veg)
+nrow(veg_data)
 ```
 
 ```{r}
@@ -216,6 +222,11 @@ print(veg_data[[1]][800])
 ```
 
 ```{r}
+# print the value of the cell locatedin the 30th row and the 60th column of the first layer
+print(veg_data[[1]][30, 60])
+```
+
+```{r}
 # calculate the sum of all the cell values in the first layer
 cellStats(veg_data[[1]], 'sum')
 ```
@@ -236,10 +247,21 @@ cellStats(veg_data[[1]], 'mean')
 ```
 
 **What part of the study area is the 13th vegetation class found (hint: make a map)? For instance, is it in the south-east part of the study area?**
-
-xxx
+```{r}
+# plot a map of the 13th vegetation class
+plot(veg_data[[13]])
+```
+The 13th vegetation class is mostly found in the north east section of the study area.
 
 **What proportion of cells contain the 12th vegetation class?**
+```{r}
+cellStats(veg_data[[12]], 'sum')
+```
+
+
+```{r}
+ncell(veg_data)
+```
 
 xxx
 

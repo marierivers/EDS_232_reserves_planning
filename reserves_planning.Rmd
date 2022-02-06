@@ -28,6 +28,7 @@ if (!require("lpsymphony")){
 ```
 
 # Data Setup
+
 ```{r}
 dir_data <- here("data/prioritizr")
 pu_shp <- file.path(dir_data, "pu.shp")
@@ -49,8 +50,11 @@ if(!file.exists(pu_shp)){
 ```
 
 # Data
+
 ## Data Import
+
 The data contains vector-based planning unit data (pu.sh) and raster-based data describing the spatial distribution of 32 vegetation classes (vegetation.tif) in southern Tasmania, Australia.
+
 ```{r}
 # import planning unit data
 pu_data <- as(read_sf(pu_shp), "Spatial")
@@ -64,12 +68,9 @@ veg_data <- stack(vegetation_tif)
 ```
 
 ## Planning unit data
-The planning unit data contains spatial data describing the geometry for each planning unit and attribute data including:
-- `id`: unique identifiers for each planning unit
-- `cost`: acquisition cost values for each planning unit (millions of Australian dollars)
-- `status`: status information for each planning unit (only relevant with Marxan)
-- `locked_in`: logical values (ie. TRUE/FALSE) indicating if planning units are covered by protected areas or not
-- `locked_out`: logical values (ie. TRUE/FALSE) indicating if planning units cannot be managed as a protected area because they are too degraded.
+
+The planning unit data contains spatial data describing the geometry for each planning unit and attribute data including: - `id`: unique identifiers for each planning unit - `cost`: acquisition cost values for each planning unit (millions of Australian dollars) - `status`: status information for each planning unit (only relevant with Marxan) - `locked_in`: logical values (ie. TRUE/FALSE) indicating if planning units are covered by protected areas or not - `locked_out`: logical values (ie. TRUE/FALSE) indicating if planning units cannot be managed as a protected area because they are too degraded.
+
 ```{r}
 # print a short summary of the data
 print(pu_data)
@@ -142,20 +143,23 @@ mapview(pu_data, zcol = "cost")
 ```
 
 **How many planning units are in the planning unit data?**
+
 ```{r}
 num_pu <- nrow(pu_data@data)
 ```
+
 The planning unit data contains `r num_pu` planning units.
 
-**What is the highest cost value?**
-The highest cost planning units has a values of $`r max_pu_cost` million Austrailian dollars.
+**What is the highest cost value?** The highest cost planning units has a values of \$`r max_pu_cost` million Austrailian dollars.
 
 **Is there a spatial pattern in the planning unit cost values (hint: use `plot` to make a map)?**
 
 Yes. The lower cost planning units are located in the north east section of the study area. The most expensive planning units are located in the north central and north west sections of the study area.
 
 ## Vegetation data
+
 The vegetation data is in raster formate and describes the spatial distribution of 32 vegetation classes in the study area. The raster data contains multiple layers (also called "bands") and each layer corresponds to a spatial grid with exactly the same area adn has exactly the same dimensionality (ie number of rows, columns and cells). In this dataset there are 32 different regular spatial grids layered on top of each other with each layer corresponding to a different vegetation class. Each layer contains a grin with 164 rows, 326 columns, and 53464 cells. Within each layer, each cell corresponds to a 0.967 by 1.02 km square. The values associated with each grid cell indicate the (1) presence or (0) absence of a given vegetation class in the cell.
+
 ```{r}
 # print a short summary of the data
 print(veg_data)
@@ -222,7 +226,7 @@ print(veg_data[[1]][800])
 ```
 
 ```{r}
-# print the value of the cell locatedin the 30th row and the 60th column of the first layer
+# print the value of the cell located in the 30th row and the 60th column of the first layer
 print(veg_data[[1]][30, 60])
 ```
 
@@ -247,33 +251,72 @@ cellStats(veg_data[[1]], 'mean')
 ```
 
 **What part of the study area is the 13th vegetation class found (hint: make a map)? For instance, is it in the south-east part of the study area?**
+
 ```{r}
 # plot a map of the 13th vegetation class
 plot(veg_data[[13]])
 ```
+
 The 13th vegetation class is mostly found in the north east section of the study area.
 
 **What proportion of cells contain the 12th vegetation class?**
-```{r}
-cellStats(veg_data[[12]], 'sum')
-```
-
 
 ```{r}
-ncell(veg_data)
+plot(veg_data[[12]])
 ```
 
-xxx
+```{r}
+mapview(veg_data[[12]])
+```
+
+```{r}
+cells_with_12th_class <- (cellStats(veg_data[[12]], 'sum') / ncell(veg_data[[12]])) * 100
+cells_with_12th_class
+```
+
+Approximately `r round(cells_with_12th_class, 2)`% of cells contain the 12th vegetation class.
 
 **Which vegetation class is the most abundant (ie present in the greatest number of cells)?**
 
-xxx
+```{r}
+num_layers <- nlayers(veg_data)
+veg_layers <- seq(from = 1, to = num_layers, by = 1)
+veg_class_abun <- data.frame()
+```
+
+```{r}
+for (i in seq_along(veg_layers)) {
+  abun <- cellStats(veg_data[[i]], 'sum')
+  abun_df <- data.frame(abun)
+  veg_class_abun <- rbind(veg_class_abun, abun_df)
+}
+```
+
+```{r}
+veg_class_most_abun <- which.max(veg_class_abun$abun)
+veg_class_most_abun
+```
+
+```{r}
+num_cell_12th <- cellStats(veg_data[[veg_class_most_abun]], "sum")
+```
+
+The `r veg_class_most_abun`th vegetation class is the most abundant and is present is the greatest number of cells compared to the other vegetation layers. There are `r num_cell_12th` cells with the `r veg_class_most_abun`th vegetation class present.
+
+```{r}
+# cellStats(veg_data, "sum")
+```
+
+xxx...find a more efficient way to do this
 
 # Gap analysis
+
 ## Introduction
+
 This gap analysis involves calculating how well each biodiversity feature is represented (covered) by protected areas. The project compares current representation of each feature by protected areas (defined as 5% of spatial distribution covered by protected areas) to a target threshold (defined as 20% of their spatial distribution covered by protected areas). The target threshold denotes the minimum amount (ie minimum proportion of spatial distribution) that we need of each feature to be represented in the protected area system.
 
 ## Feature abundance
+
 Calculate how much of each vegetation feature occurs inside each planning unit (ie the abundance of the feature).
 
 ```{r}
@@ -317,6 +360,7 @@ print(abundance_data)
 ```
 
 Explore the abundance data
+
 ```{r}
 # calculate the average abundance of the features
 mean(abundance_data$absolute_abundance_km)
@@ -340,11 +384,12 @@ xxx
 
 xxx
 
-**How many features have a total abundance greater than 100 km^2 (hint: use sum(abundance_data$absolute_abundance_km2 > set_units(threshold, km^2) with the correct threshold value)**
+**How many features have a total abundance greater than 100 km\^2 (hint: use sum(abundance_data\$absolute_abundance_km2 \> set_units(threshold, km\^2) with the correct threshold value)**
 
 xxx
 
 ## Feature Representation
+
 After calculating the total amount of each feature in the planning units (ie the features abundance), calculate the amount of each feature in the planning units that are covered by protected ares (ie feature representation by protected areas) using the `eval_feature_representation_summary()` function. This function requires (i) a conservation problem object with the planning unit and biodiversity data and also (ii) an object representing a solution to the problem (i.e an object in the same format as the planning unit data with values indicating if the planning units are selected or not).
 
 ```{r}
@@ -358,7 +403,7 @@ repr_data <- eval_feature_representation_summary(p0, pu_data[, "pa_status"])
 print(repr_data)
 ```
 
-The `absolute_held` column shows the total amount of each feature held in the solution (ie the planning units covered by protected areas). The `relative_held` column shows the proportion of each feature held in the solution (ie the proportion of each feature's spatial distribution held in protected areas). Since the `absolute_held` values correspond to the number of grid cells in the veg_data object with overlap with protected areas, convert then to area units (ie km^2) so they can be reported.
+The `absolute_held` column shows the total amount of each feature held in the solution (ie the planning units covered by protected areas). The `relative_held` column shows the proportion of each feature held in the solution (ie the proportion of each feature's spatial distribution held in protected areas). Since the `absolute_held` values correspond to the number of grid cells in the veg_data object with overlap with protected areas, convert then to area units (ie km\^2) so they can be reported.
 
 ```{r}
 # add new column with the areas represented in km^2
@@ -391,13 +436,16 @@ xxx
 xxx
 
 # Spatial Prioritications
+
 ## Introduction
+
 Develop prioritizations to identify priority areas for protected area establishment. Note, `prioritizr` is a decision support tool similar to Marxan and Zonation. It is designed to help you make decisions - it can't make decisions for you.
 
 ## Starting out simple
+
 Create a prioritization using the minimum set formulation of the reserve selection problem. This formulation means that we want a solution that will meet the targets for our biodiversity features for minimum cost. Here, we will set 5% targets for each vegetation class and use the data in the `cost` column to specify acquisition costs.
 
-xxx...see lab for lpsymphony solver installation instructions 
+xxx...see lab for lpsymphony solver installation instructions
 
 ```{r}
 # print planning unit data
@@ -458,11 +506,12 @@ xxx
 
 **Can you verify that all of the targets were met in the prioritization?**
 
-**hint: `eval_feature_representation_summary(p1, s1[, "solution_1"])**
+**hint: \`eval_feature_representation_summary(p1, s1[, "solution_1"])**
 
 xxx
 
 ## Adding complexity
+
 Add additional constraints to the problem to make it more useful. First, lock in planning units that are already covered by protected areas. If some vegetation communities are already secured inside existing protected areas, then we might not need to add as many new protected areas to the existing protected area system to meet targets.
 
 ```{r}
@@ -502,6 +551,7 @@ spplot(s2, "solution_1", col.regions = c("grey80", "darkgreen"), main = "s2, col
 ```
 
 Now set the target to 10%.
+
 ```{r}
 # make prioritization problem
 p3_rds <- file.path(dir_data, "p3.rds")
@@ -567,15 +617,13 @@ s4 <- solve(p4)
 print(s4)
 ```
 
-
 ```{r}
 # plot solution
 # selected = green, not selected = grey
 spplot(s4, "solution_1", col.regions = c("grey80", "darkgreen"), main = s4, colorkey = FALSE)
 ```
 
-Compare the solutions
-**1. What is the cost of the planning units selected in s2, s3, and s4?**
+Compare the solutions **1. What is the cost of the planning units selected in s2, s3, and s4?**
 
 xxx
 
@@ -596,6 +644,7 @@ xxx
 xxx
 
 ## Penalizing fragmentation
+
 To promote connectivity within the planned protected area system, add penalties to the conservation planning problem to penalize fragmentation. Specify a trade-off between the primary objective (solution cost) and fragmentation (total exposed boundary length) using a penalty value. Generally, use penalty values between 0.00001 and 0.01. Since the planning unit data is in a spatial format (ie. vector or raster data), prioritizr can automatically calculate the boundary data.
 
 ```{r}
@@ -648,9 +697,3 @@ xxx
 **Try setting the penalty value to 0.5. What is the cost of the solution now? Is it different from the fourth solution (s4)? Hint: try plotting the solutions to visualize them? Is this a useful penalty value? Why (or why not)?**
 
 xxx
-
-
-
-
-
-

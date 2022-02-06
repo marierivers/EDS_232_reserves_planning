@@ -360,7 +360,6 @@ print(abundance_data)
 ```
 
 Explore the abundance data
-
 ```{r}
 # calculate the average abundance of the features
 mean(abundance_data$absolute_abundance_km)
@@ -377,23 +376,35 @@ abundance_data$feature[which.max(abundance_data$absolute_abundance_km)]
 ```
 
 **What is the median abundance of the features (hint `median`)?**
+```{r}
+median_abundance <- median(abundance_data$absolute_abundance_km)
+median_abundance
+```
 
-xxx
+The median abundance of the features is `r round(median_abundance, 2)`km^2. xxx...check if units show up twice when knitted
 
 **What is the name of the feature with smallest abundance?**
+```{r}
+min_abun_feature <- abundance_data$feature[which.min(abundance_data$absolute_abundance_km)]
+min_abun_feature
+```
 
-xxx
+The feature with the smallest abundance is `r min_abun_feature`.
 
 **How many features have a total abundance greater than 100 km\^2 (hint: use sum(abundance_data\$absolute_abundance_km2 \> set_units(threshold, km\^2) with the correct threshold value)**
+```{r}
+num_features_greater100km <- sum(abundance_data$absolute_abundance_km > set_units(100, km^2))
+num_features_greater100km
+```
 
-xxx
+There are `r num_features_greater100km` that have a total abundance greater than 100 km/^2.
 
 ## Feature Representation
 
 After calculating the total amount of each feature in the planning units (ie the features abundance), calculate the amount of each feature in the planning units that are covered by protected ares (ie feature representation by protected areas) using the `eval_feature_representation_summary()` function. This function requires (i) a conservation problem object with the planning unit and biodiversity data and also (ii) an object representing a solution to the problem (i.e an object in the same format as the planning unit data with values indicating if the planning units are selected or not).
 
 ```{r}
-# create column in planning unit data wtih binary values (zeros and ones) indicating if a planning unit is coveredby protected areas or not
+# create column in planning unit data wtih binary values (zeros and ones) indicating if a planning unit is covered by protected areas or not
 pu_data$pa_status <- as.numeric(pu_data$locked_in)
 
 # calculate feature representation by protected areas
@@ -415,25 +426,41 @@ repr_data$absolute_held_km <- (repr_data$absolute_held * prod(res(veg_data))) %>
 print(repr_data)
 ```
 
-Investigate who well the species are represented.
+Investigate how well the species are represented.
 
 **What is the average proportion of the features held in protected area (hint: use `mean(table$relative_held)` with the correct `table` name)?**
+```{r}
+avg_prop_protected <- (mean(repr_data$relative_held)) * 100
+avg_prop_protected
+```
 
-xxx
+An average of `r avg_prop_protected`% of features are protected.
 
 **If we set a target of 10% coverage by protected areas, how many features fail to meet this target (hint: use `sum(table$relative_held >= target_vale)` with the correct `table` name)?**
+```{r}
+num_features_lessthan_10pct <- sum(repr_data$relative_held <= 0.1)
+num_features_lessthan_10pct
+```
 
-xxx
+Based on current protected status, `r `num_features_lessthan_10pct` features fail to meet a target of 10% coverage by protected areas.
 
 **If we set a target of 20% coverage by protected areas, how many features fail to meet this target?**
 
-xxx
+```{r}
+num_features_lessthan_20pct <- sum(repr_data$relative_held <= 0.2)
+num_features_lessthan_20pct
+```
+
+Based on current protected status, `r `num_features_lessthan_20pct` features fail to meet a target of 20% coverage by protected areas.
 
 **Is there a relationship between the total abundance of a feature and how well it is represented by protected areas?**
 
 **hint: `plot(abundance_data$absolute_abundance ~ repr_data$relative_held)`**
+```{r}
+plot(abundance_data$absolute_abundance ~ repr_data$relative_held)
+```
 
-xxx
+There does not appear to be a relationship between the total abundance of a feature and how well it is represented by protected areas.
 
 # Spatial Prioritications
 
@@ -461,6 +488,7 @@ if(!file.exists(p1_rds)){
     add_relative_targets(0.05) %>% # representation targets
     add_binary_decisions() %>% 
     add_lpsymphony_solver()
+  saveRDS(p1, p1_rds)
 }
 
 p1 <- readRDS(p1_rds)
@@ -471,7 +499,7 @@ print(p1)
 
 ```{r}
 # solve problem
-s1 <- sovle(p1)
+s1 <- solve(p1)
 
 # print solution, the solution_1 column contains the solution values
 # indicating if a planning unit is (1) selected or (0) not
@@ -485,7 +513,7 @@ eval_n_summary(p1, s1[, "solution_1"])
 
 ```{r}
 # calculate total cost of the prioritization
-eval_cost_summary(p1, s1[, "solution"])
+eval_cost_summary(p1, s1[, "solution_1"])
 ```
 
 ```{r}
@@ -497,7 +525,14 @@ spplot(s1, "solution_1", col.regions = c("grey80", "darkgreen"), main = "s1, col
 Examine the solution.
 
 **How many planning units were selected in the prioritization? What proportion of planning units were selected in the prioritization?**
+```{r}
+num_pu_selected_1 <- as.numeric(eval_n_summary(p1, s1[, "solution_1"]))
+num_pu_selected_1
 
+prop_pu_selected_1 <- (num_pu_selected_1 / num_pu) * 100
+prop_pu_selected_1
+```
+A total of `r num_pu_selected_1` planning units were selected in the prioritization. This represents `r prop_pu_selected_1`% of all planning units.
 xxx
 
 **Is there a pattern in the spatial distribution of the priority areas?**
